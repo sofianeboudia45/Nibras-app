@@ -9,8 +9,11 @@ blood_pressure = st.number_input("ضغط الدم", min_value=50, max_value=200,
 
 # زر التنبؤ
 if st.button("توقع الحالة الصحية"):
-    st.write(f"تحليل البيانات لعمر {age} وضغط دم {blood_pressure}...")
-    st.success("تم تحليل البيانات بنجاح (يرجى مراجعة الطبيب).")
+    # خوارزمية تنبؤ بسيطة جداً للأغراض التجريبية
+    if blood_pressure > 140 or (age > 50 and blood_pressure > 130):
+        st.warning("النتيجة: قد يكون هناك خطر ارتفاع ضغط الدم، يرجى استشارة الطبيب.")
+    else:
+        st.success("النتيجة: المؤشرات ضمن النطاق الطبيعي.")
 
 st.info("تنبيه: هذا التطبيق لأغراض تجريبية فقط.")
 
