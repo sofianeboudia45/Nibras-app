@@ -1,4 +1,5 @@
 import streamlit as st
+
 # داخل كود الـ Streamlit بعد حساب الـ eGFR:
 st.subheader("نتائج التحليل السريري")
 
@@ -15,3 +16,4 @@ elif 60 <= result < 90:
 elif 30 <= result < 60:
     st.error("المرحلة 3: قصور كلوى متوسط")
 # ... وهكذا
+وهكذا
