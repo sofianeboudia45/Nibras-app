@@ -1,20 +1,13 @@
-import math
-def calculate_egfr(creatinine, age, gender):
-    # تحويل الكرياتينين لـ mg/dL إذا كان بوحدة أخرى (هذه المعادلة تفترض mg/dL)
-    # المعادلة المعتمدة CKD-EPI 2021
-    if gender == "أنثى":
-        kappa = 0.7
-        alpha = -0.241
-        gender_factor = 1.012
-    else: # ذكر
-        kappa = 0.9
-        alpha = -0.302
-        gender_factor = 1.0
-
-    # المعادلة الرياضية
-    eGFR = 142 * (min(creatinine/kappa, 1)**alpha) * (max(creatinine/kappa, 1)**-1.200) * (0.9938**age) * gender_factor
+result_value = calculate_egfr(creatinine, age, gender)
+if result_value >= 90:
+    st.success(f"نتيجة وظائف الكلى: {result_value} (طبيعية)")
+elif 60 <= result_value < 90:
+    st.warning(f"نتيجة وظائف الكلى: {result_value} (انخفاض طفيف - يرجى استشارة الطبيب)")
+elif 30 <= result_value < 60:
+    st.error(f"نتيجة وظائف الكلى: {result_value} (انخفاض متوسط - ضرورة مراجعة طبيب كلى)")
+else:
+    st.error(f"نتيجة وظائف الكلى: {result_value} (حالة حرجة - يرجى مراجعة الطوارئ أو طبيب مختص فوراً)")
     
-    return round(eGFR, 2)
     
 
     
