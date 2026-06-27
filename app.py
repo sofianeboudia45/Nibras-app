@@ -1,5 +1,4 @@
 import streamlit as st
-
 # داخل كود الـ Streamlit بعد حساب الـ eGFR:
 st.subheader("نتائج التحليل السريري")
 
