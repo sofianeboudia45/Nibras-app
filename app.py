@@ -1,5 +1,4 @@
- import streamlit as st
-
+import streamlit as st
 def calculate_kidney_risk(age, glucose, creatinine, gender):
     # هذه معادلة افتراضية تبسيطية لأغراض التدريب
     # في التطبيق النهائي سنستخدم معادلة CKD-EPI المعتمدة
