@@ -1,5 +1,4 @@
-streamlit
-stremalit-gspread
-pandas
+
+stremalit-gsprea
 
 
