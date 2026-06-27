@@ -1,59 +1,48 @@
 import streamlit as st
 import pandas as pd
-import os
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
 
-st.set_page_config(page_title="نبراس", page_icon="🩺")
-st.title("🩺 منصة نبراس الذكية")
+# إعداد الصفحة لتكون بوضع العرض الكامل
+st.set_page_config(page_title="منصة نبراس الذكية", layout="wide")
 
-# 1. إدخال البيانات
-age = st.number_input("العمر", 0, 120, 30)
-glucose = st.number_input("السكر", 50, 400, 100)
-bp = st.number_input("ضغط الدم", 50, 200, 120)
+# تخصيص العنوان بستايل جذاب
+st.markdown("""
+    <h1 style='text-align: center; color: #2E86C1;'>🩺 منصة نبراس الذكية</h1>
+    <hr>
+""", unsafe_allow_html=True)
 
-# 2. زر التنبؤ والحفظ
-if st.button("تنبؤ وحفظ البيانات"):
-    if os.path.exists('patients.csv'):
-        df = pd.read_csv('patients.csv')
-        
-        # التأكد من تنوع البيانات
-        if df['Result'].nunique() < 2:
-            st.warning("يرجى إدخال بيانات متنوعة (آمن وتحذير) لتدريب النموذج.")
-            result = "تحت التدريب"
-        else:
-            # تدريب النموذج
-            X = df[['Age', 'Glucose', 'BP']]
-            y = df['Result']
-            model = RandomForestClassifier(n_estimators=100, random_state=42)
-            model.fit(X, y)
-            
-            # التنبؤ للحالة الجديدة
-            new_patient = pd.DataFrame([[age, glucose, bp]], columns=["Age", "Glucose", "BP"])
-            result = model.predict(new_patient)[0]
-            
-            # حساب وعرض الدقة
-            y_pred = model.predict(X)
-            accuracy = accuracy_score(y, y_pred)
-            st.info(f"📊 دقة النموذج الحالي: {accuracy * 100:.2f}%")
-    else:
-        result = "آمن" if (glucose < 125 and bp < 140) else "تحذير"
-        st.write("ملاحظة: هذه أول حالة، سيتم بناء النموذج لاحقاً.")
+# استخدام القائمة الجانبية للمدخلات لتبدو الصفحة أنيقة
+with st.sidebar:
+    st.header("⚙️ بيانات الفحص")
+    age = st.number_input("العمر", min_value=0, value=30)
+    glucose = st.number_input("السكر", min_value=0, value=100)
+    bp = st.number_input("ضغط الدم", min_value=0, value=120)
+    bmi = st.number_input("مؤشر كتلة الجسم", min_value=0.0, value=22.0)
     
-    # حفظ البيانات
-    new_data = pd.DataFrame([[age, glucose, bp, result]], columns=["Age", "Glucose", "BP", "Result"])
-    if os.path.exists('patients.csv'):
-        new_data.to_csv('patients.csv', mode='a', header=False, index=False)
-    else:
-        new_data.to_csv('patients.csv', index=False)
-        
-    st.success(f"النتيجة المتوقعة: **{result}**")
-    st.success("تم حفظ البيانات بنجاح!")
+    predict_btn = st.button("تنبؤ وحفظ البيانات", type="primary")
 
-# 3. عرض البيانات
-if os.path.exists('patients.csv'):
-    st.write("### سجل المرضى:")
-    st.table(pd.read_csv('patients.csv'))
+# الحاوية الرئيسية لعرض النتائج
+with st.container(border=True):
+    st.subheader("📊 نتيجة التحليل")
+    
+    if predict_btn:
+        # هنا تضع منطق التنبؤ الخاص بك (الـ RandomForest)
+        # مثال بسيط للنتيجة:
+        result = "آمن" if glucose < 150 else "تحذير"
+        
+        if result == "آمن":
+            st.success("✅ النتيجة: المريض في حالة آمنة")
+        else:
+            st.error("⚠️ النتيجة: يرجى مراجعة الطبيب")
+    else:
+        st.info("قم بإدخال البيانات واضغط على زر التنبؤ للبدء.")
+
+# عرض السجل بتنسيق احترافي
+st.markdown("---")
+st.subheader("📋 سجل المرضى المسجلين")
+# يمكنك هنا جلب البيانات من Google Sheets وعرضها كالتالي:
+# df = pd.DataFrame(...) 
+# st.dataframe(df, use_container_width=True)
+
     
     
     
