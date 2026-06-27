@@ -12,7 +12,7 @@ def calculate_egfr(creatinine, age, gender):
     eGFR = 142 * (min(creatinine/kappa, 1)**alpha) * (max(creatinine/kappa, 1)**-1.200) * (0.9938**age) * gender_factor
     return round(eGFR, 2)
 
-# تهيئة ذاكرة الجلسة لحفظ النتائج
+# تهيئة ذاكرة الجلسة
 if 'history' not in st.session_state:
     st.session_state.history = []
 
@@ -28,33 +28,41 @@ with col1:
 with col2:
     age = st.number_input("العمر 📅", min_value=0, max_value=120)
     st.write("") 
-    st.write("") 
     if st.button("تحليل الحالة الآن 🔍"):
         if creatinine > 0 and age > 0:
             result = calculate_egfr(creatinine, age, gender)
-            # إضافة النتيجة إلى التاريخ
-            entry = {"date": datetime.now().strftime("%H:%M"), "eGFR": result}
+            # إضافة النتيجة للتاريخ
+            entry = {"التوقيت": datetime.now().strftime("%H:%M"), "eGFR": result}
             st.session_state.history.append(entry)
-            
-            st.metric(label="معدل الترشيح الكبيبي (eGFR)", value=f"{result} ml/min")
+            st.metric(label="معدل الترشيح الكبيبي الحالي (eGFR)", value=f"{result} ml/min")
         else:
             st.error("يرجى إدخال قيم صحيحة.")
 
-# عرض المقارنة والتاريخ
+# عرض السجل والتقرير
 if st.session_state.history:
-    st.markdown("### 📊 سجل النتائج في هذه الجلسة")
-    # عرض النتائج في جدول بسيط
+    st.markdown("### 📊 سجل النتائج والمقارنة")
     st.table(st.session_state.history)
     
-    if len(st.session_state.history) > 1:
-        st.info(f"تم تسجيل {len(st.session_state.history)} فحوصات. يمكنك مقارنة النتائج أعلاه.")
+    # تحضير نص التقرير للتحميل (يحتوي على كامل السجل الحالي)
+    report_text = "تقرير منصة نبراس - سجل النتائج\n\n"
+    for item in st.session_state.history:
+        report_text += f"الوقت: {item['التوقيت']} | النتيجة: {item['eGFR']} ml/min\n"
+    
+    # زر التحميل
+    st.download_button(
+        label="📥 تحميل سجل النتائج كملف نصي",
+        data=report_text.encode('utf-8-sig'),
+        file_name="nibras_report.txt",
+        mime="text/plain"
+    )
     
     if st.button("مسح السجل 🗑️"):
         st.session_state.history = []
         st.rerun()
 
 st.markdown("---")
-st.caption("⚠️ إخلاء مسؤولية: النتائج للاسترشاد فقط. يرجى مراجعة الطبيب.")
+st.caption("⚠️ إخلاء مسؤولية: للاسترشاد فقط. يرجى مراجعة الطبيب.")
+    
         
 
 
