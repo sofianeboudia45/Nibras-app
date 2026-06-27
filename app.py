@@ -2,8 +2,9 @@ import streamlit as st
 import pandas as pd
 import os
 
-# إضافة عنوان وتنسيق للصفحة
-st.title("📋 سجل بيانات المرضى")
+# العنوان المختار
+st.set_page_config(page_title="نبراس", page_icon="🏥")
+st.title("🏥 بوابة نبراس الصحية")
 st.markdown("---")
 
 # استخدام الأعمدة لجعل الواجهة متناسقة
@@ -35,6 +36,7 @@ if st.button("💾 حفظ البيانات"):
         df.to_csv(file_path, index=False, encoding='utf-8-sig')
         
     st.success("تم حفظ البيانات بنجاح في السجل!")
+    
     
 
 
