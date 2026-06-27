@@ -9,7 +9,7 @@ def create_pdf(name, age, glucose, result):
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(200, 10, txt="Nibras Smart Platform Report", ln=True, align='C')
     pdf.set_font("Arial", size=12)
-    safe_name = name.encode('latin-1', 'replace').decode('latin-1')
+    # استبدل سطر safe_name بهذا السطر المباشر safe_name = name 
     pdf.cell(200, 10, txt=f"Name: {safe_name}", ln=True)
     pdf.cell(200, 10, txt=f"Age: {age}", ln=True)
     pdf.cell(200, 10, txt=f"Glucose Level: {glucose}", ln=True)
