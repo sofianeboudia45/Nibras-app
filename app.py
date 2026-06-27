@@ -4,25 +4,15 @@ import os
 from fpdf import FPDF
 import re
 
-# دالة إنشاء الـ PDF
-def create_pdf(name, age, glucose, result):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(200, 10, txt="Nibras Smart Report", ln=True, align='C')
-    pdf.set_font("Arial", size=12)
-    
-    # تنظيف الاسم: إزالة أي حروف غير لاتينية (عربية) لتجنب الخطأ
-    clean_name = re.sub(r'[^\x00-\x7F]+', '', name)
-    if not clean_name: clean_name = "Patient"
-    
-    pdf.cell(200, 10, txt=f"Name: {clean_name}", ln=True)
-    pdf.cell(200, 10, txt=f"Age: {age}", ln=True)
-    pdf.cell(200, 10, txt=f"Glucose Level: {glucose}", ln=True)
-    pdf.cell(200, 10, txt=f"Result: {result}", ln=True)
-    return pdf.output(dest='S').encode('latin-1')
+# إعداد الصفحة
+st.set_page_config(page_title="منصة نبراس الذكية", page_icon="🩺", layout="centered")
 
-st.set_page_config(page_title="منصة نبراس الذكية", layout="wide")
+# إضافة صورتك الشخصية في أعلى التطبيق
+if os.path.exists("my_photo.jpg"):
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image("my_photo.jpg", caption="المطور: سفيان بودية", use_container_width=True)
+
 st.markdown("<h1 style='text-align: center;'>🩺 منصة نبراس الذكية</h1>", unsafe_allow_html=True)
 
 with st.sidebar:
@@ -30,10 +20,10 @@ with st.sidebar:
     name = st.text_input("اسم المريض")
     age = st.number_input("العمر", value=30)
     glucose = st.number_input("مستوى السكر", value=100)
-    predict_btn = st.button("تحليل وحفظ")
+    predict_btn = st.button("تحليل وحفظ النتيجة")
 
 if predict_btn and name:
-    result = "يحتاج استشارة" if glucose > 140 else "طبيعي"
+    result = "⚠️ يحتاج استشارة" if glucose > 140 else "✅ طبيعي"
     new_data = pd.DataFrame({"الاسم": [name], "العمر": [age], "السكر": [glucose], "النتيجة": [result]})
     
     if os.path.exists("patients_data.csv"):
@@ -42,14 +32,13 @@ if predict_btn and name:
         new_data.to_csv("patients_data.csv", index=False, encoding='utf-8-sig')
         
     st.success(f"تم تحليل بيانات {name}!")
-    pdf_data = create_pdf(name, age, glucose, result)
-    st.download_button("📥 تحميل التقرير PDF", data=pdf_data, file_name="report.pdf", mime="application/pdf")
 
 st.markdown("---")
 st.subheader("📊 لوحة التحكم")
 if os.path.exists("patients_data.csv"):
     df = pd.read_csv("patients_data.csv", encoding='utf-8-sig')
-    st.table(df)
+    st.dataframe(df, use_container_width=True)
+    
     
     
     
