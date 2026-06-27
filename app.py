@@ -3,17 +3,17 @@ import pandas as pd
 import os
 from fpdf import FPDF
 
-# إعداد ملف PDF
+# الدالة الجديدة (بالإنجليزية لتجنب خطأ الترميز)
 def create_pdf(name, age, glucose, result):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(200, 10, txt="تقرير منصة نبراس الذكية", ln=True, align='C')
+    pdf.cell(200, 10, txt="Nibras Smart Platform Report", ln=True, align='C')
     pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt=f"الاسم: {name}", ln=True)
-    pdf.cell(200, 10, txt=f"العمر: {age}", ln=True)
-    pdf.cell(200, 10, txt=f"مستوى السكر: {glucose}", ln=True)
-    pdf.cell(200, 10, txt=f"النتيجة: {result}", ln=True)
+    pdf.cell(200, 10, txt=f"Name: {name}", ln=True)
+    pdf.cell(200, 10, txt=f"Age: {age}", ln=True)
+    pdf.cell(200, 10, txt=f"Glucose Level: {glucose}", ln=True)
+    pdf.cell(200, 10, txt=f"Result: {result}", ln=True)
     return pdf.output(dest='S').encode('latin-1')
 
 st.set_page_config(page_title="منصة نبراس الذكية", layout="wide")
@@ -28,29 +28,30 @@ with st.sidebar:
     predict_btn = st.button("تحليل وحفظ النتيجة")
 
 # المنطق والتحليل
-if predict_btn:
-    result = "تتطلب استشارة" if glucose > 140 else "طبيعية"
+if predict_btn and name:
+    result = "Needs Consultation" if glucose > 140 else "Normal"
     
     # حفظ في ملف
-    new_data = pd.DataFrame({"الاسم": [name], "العمر": [age], "السكر": [glucose], "النتيجة": [result]})
+    new_data = pd.DataFrame({"Name": [name], "Age": [age], "Glucose": [glucose], "Result": [result]})
     if os.path.exists("patients_data.csv"):
         new_data.to_csv("patients_data.csv", mode='a', header=False, index=False, encoding='utf-8-sig')
     else:
         new_data.to_csv("patients_data.csv", index=False, encoding='utf-8-sig')
     
-    st.success(f"تم تحليل حالة {name} بنجاح!")
+    st.success(f"Analysis for {name} completed!")
     
     # زر التحميل
     pdf_data = create_pdf(name, age, glucose, result)
-    st.download_button("📥 تحميل التقرير كـ PDF", data=pdf_data, file_name=f"{name}_report.pdf", mime="application/pdf")
+    st.download_button("📥 Download Report as PDF", data=pdf_data, file_name=f"{name}_report.pdf", mime="application/pdf")
 
 # العرض
 st.markdown("---")
-st.subheader("📊 لوحة التحكم")
+st.subheader("📊 Dashboard")
 if os.path.exists("patients_data.csv"):
     df = pd.read_csv("patients_data.csv")
-    st.bar_chart(df.set_index("الاسم")["السكر"])
+    st.bar_chart(df.set_index("Name")["Glucose"])
     st.table(df)
+    
 
 
 
