@@ -2,12 +2,15 @@ import streamlit as st
 import pandas as pd
 import os
 
-# العنوان المختار
-st.set_page_config(page_title="نبراس", page_icon="🏥")
-st.title("🏥 بوابة نبراس الصحية")
+# إعداد الصفحة مع أيقونة تعبر عن الصحة
+st.set_page_config(page_title="نبراس - الجزائر", page_icon="🇩🇿")
+
+# إضافة العلم الجزائري والعنوان
+st.title("🇩🇿 بوابة نبراس الصحية")
+st.subheader("نحو رعاية صحية أفضل")
 st.markdown("---")
 
-# استخدام الأعمدة لجعل الواجهة متناسقة
+# استخدام الأعمدة لجعل الواجهة منظمة
 col1, col2 = st.columns(2)
 
 with col1:
@@ -15,10 +18,10 @@ with col1:
     gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
 
 with col2:
-    creatinine = st.number_input("الكرياتينين", min_value=0.0, format="%.2f")
-    age = st.number_input("العمر", min_value=0.0, format="%.1f")
+    creatinine = st.number_input("الكرياتينين (mg/dL)", min_value=0.0, format="%.2f")
+    age = st.number_input("العمر (سنة)", min_value=0.0, format="%.1f")
 
-# زر الحفظ بتنسيق أفضل
+# زر الحفظ مع إضافة لمسة ترحيبية
 if st.button("💾 حفظ البيانات"):
     data = {
         "اسم المريض": [name],
@@ -35,7 +38,12 @@ if st.button("💾 حفظ البيانات"):
     else:
         df.to_csv(file_path, index=False, encoding='utf-8-sig')
         
-    st.success("تم حفظ البيانات بنجاح في السجل!")
+    st.success("تم حفظ بيانات المريض بنجاح في سجلات نبراس!")
+
+# إضافة تذييل بسيط
+st.markdown("---")
+st.caption("نبراس - صنع في الجزائر بفخر 🇩🇿")
+
     
     
 
