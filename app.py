@@ -5,52 +5,55 @@ import plotly.express as px
 from datetime import datetime
 
 # إعداد الصفحة
-st.set_page_config(page_title="منصة نبراس الصحية", page_icon="📈", layout="wide")
+st.set_page_config(page_title="منصة نبراس: البطاقة الصحية", page_icon="🩺", layout="wide")
 
-# دالة الحساب المحدثة (دقة أعلى)
-def calculate_egfr_advanced(creatinine, age, gender, weight):
-    # معادلة CKD-EPI 2021
+# دالة الحساب
+def calculate_egfr_advanced(creatinine, age, gender):
     kappa = 0.7 if gender == "أنثى" else 0.9
     alpha = -0.241 if gender == "أنثى" else -0.302
-    
-    # حساب eGFR الأساسي
     eGFR = 142 * (min(creatinine/kappa, 1)**alpha) * (max(creatinine/kappa, 1)**-1.200) * (0.9938**age)
     if gender == "أنثى": eGFR *= 1.012
-    
-    # تعديل النتيجة بناءً على مساحة سطح الجسم (BSA) تقريباً
-    # BSA (Mosteller) = sqrt((height * weight) / 3600)
-    # للتبسيط نستخدم عامل الوزن المرجعي 1.73m2
     return round(eGFR, 2)
 
 if 'history' not in st.session_state: st.session_state.history = []
 
-st.title("🩺 منصة نبراس: التحليل السريري المتقدم")
+st.title("🩺 منصة نبراس: البطاقة الصحية الرقمية")
+st.markdown("---")
+
 with st.sidebar:
-    st.header("البيانات السريرية")
-    patient_name = st.text_input("اسم المريض")
+    st.header("إدخال بيانات التحليل")
     creatinine = st.number_input("الكرياتينين (mg/dL)", min_value=0.0, format="%.2f")
-    weight = st.number_input("الوزن (kg)", min_value=10.0, max_value=250.0)
     gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
     age = st.number_input("العمر", min_value=0, max_value=120)
-    if st.button("تحليل دقيق"):
+    notes = st.text_input("ملاحظات المريض (اختياري)")
+    
+    if st.button("حفظ التحليل 💾"):
         if creatinine > 0 and age > 0:
-            res = calculate_egfr_advanced(creatinine, age, gender, weight)
-            st.session_state.history.append({"التاريخ": datetime.now().strftime("%Y-%m-%d %H:%M"), "eGFR": res})
+            res = calculate_egfr_advanced(creatinine, age, gender)
+            st.session_state.history.append({
+                "التاريخ": datetime.now().strftime("%m-%d %H:%M"), 
+                "eGFR": res, 
+                "ملاحظات": notes
+            })
+            st.success("تم الحفظ بنجاح!")
         else:
-            st.error("أدخل بيانات صحيحة")
+            st.error("يرجى إدخال قيم صحيحة")
 
 if st.session_state.history:
     df = pd.DataFrame(st.session_state.history)
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([1, 2])
     with col1:
-        st.table(df)
+        st.subheader("سجل المتابعة")
+        st.dataframe(df, use_container_width=True)
     with col2:
-        fig = px.line(df, x="التاريخ", y="eGFR", markers=True, title="تطور مؤشر eGFR السريري")
-        st.plotly_chart(fig)
+        st.subheader("تحليل بصري للتطور")
+        fig = px.line(df, x="التاريخ", y="eGFR", markers=True)
+        st.plotly_chart(fig, use_container_width=True)
 else:
-    st.info("أدخل البيانات من القائمة الجانبية لبدء التحليل السريري.")
+    st.info("لم يتم إدخال بيانات بعد. أضف التحليل الأول لبدء بطاقتك الصحية.")
 
-st.caption("⚠️ ملاحظة: تم تحديث الخوارزمية لتوافق معايير CKD-EPI 2021.")
+st.caption("⚠️ منصة نبراس: سجلاتك محفوظة لهذه الجلسة فقط. قم بتحميل التقرير قبل الخروج.")
+
 
             
     
