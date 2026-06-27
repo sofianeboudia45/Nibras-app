@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 from fpdf import FPDF
+import re
 
 # دالة إنشاء الـ PDF
 def create_pdf(name, age, glucose, result):
@@ -10,12 +11,16 @@ def create_pdf(name, age, glucose, result):
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(200, 10, txt="Nibras Smart Report", ln=True, align='C')
     pdf.set_font("Arial", size=12)
-    # استخدام replace لتجنب أخطاء الترميز
-    pdf.cell(200, 10, txt=f"Name: {name}".encode('latin-1', 'replace').decode('latin-1'), ln=True)
+    
+    # تنظيف الاسم: إزالة أي حروف غير لاتينية (عربية) لتجنب الخطأ
+    clean_name = re.sub(r'[^\x00-\x7F]+', '', name)
+    if not clean_name: clean_name = "Patient"
+    
+    pdf.cell(200, 10, txt=f"Name: {clean_name}", ln=True)
     pdf.cell(200, 10, txt=f"Age: {age}", ln=True)
     pdf.cell(200, 10, txt=f"Glucose Level: {glucose}", ln=True)
     pdf.cell(200, 10, txt=f"Result: {result}", ln=True)
-    return pdf.output(dest='S').encode('latin-1', 'replace')
+    return pdf.output(dest='S').encode('latin-1')
 
 st.set_page_config(page_title="منصة نبراس الذكية", layout="wide")
 st.markdown("<h1 style='text-align: center;'>🩺 منصة نبراس الذكية</h1>", unsafe_allow_html=True)
@@ -38,13 +43,14 @@ if predict_btn and name:
         
     st.success(f"تم تحليل بيانات {name}!")
     pdf_data = create_pdf(name, age, glucose, result)
-    st.download_button("📥 تحميل التقرير PDF", data=pdf_data, file_name=f"{name}_report.pdf", mime="application/pdf")
+    st.download_button("📥 تحميل التقرير PDF", data=pdf_data, file_name="report.pdf", mime="application/pdf")
 
 st.markdown("---")
 st.subheader("📊 لوحة التحكم")
 if os.path.exists("patients_data.csv"):
     df = pd.read_csv("patients_data.csv", encoding='utf-8-sig')
     st.table(df)
+    
     
     
     
