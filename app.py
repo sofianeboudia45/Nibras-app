@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
-from streamlit_gsheets import GSheetsConnection
+import gspread
+
+streamlit as st
+import pandas as pd
 # إعداد الصفحة لتكون بوضع العرض الكامل
 st.set_page_config(page_title="منصة نبراس الذكية", layout="wide")
 
