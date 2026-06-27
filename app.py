@@ -1,47 +1,35 @@
-import streamlit as st
-import pandas as pd
-import os
+ import streamlit as st
 
-# إعداد الصفحة لتكون واسعة
-st.set_page_config(page_title="منصة نبراس الذكية", layout="wide")
-
-# إضافة صورتك الشخصية بحجم كبير وعرض كامل
-image_file = "my_photo.jpg.jpg"
-
-if os.path.exists(image_file):
-    # وضع الصورة في حاوية تأخذ عرض الصفحة بالكامل
-    st.image(image_file, use_container_width=True)
-else:
-    st.warning("يرجى التأكد من اسم الملف.")
-
-st.markdown("<h1 style='text-align: center;'>🩺 منصة نبراس الذكية</h1>", unsafe_allow_html=True)
-
-with st.sidebar:
-    st.header("⚙️ بيانات المريض")
-    name = st.text_input("اسم المريض")
-    age = st.number_input("العمر", value=30)
-    glucose = st.number_input("مستوى السكر", value=100)
-    predict_btn = st.button("تحليل وحفظ النتيجة")
-
-if predict_btn and name:
-    result = "⚠️ يحتاج استشارة" if glucose > 140 else "✅ طبيعي"
-    new_data = pd.DataFrame({"الاسم": [name], "العمر": [age], "السكر": [glucose], "النتيجة": [result]})
+def calculate_kidney_risk(age, glucose, creatinine, gender):
+    # هذه معادلة افتراضية تبسيطية لأغراض التدريب
+    # في التطبيق النهائي سنستخدم معادلة CKD-EPI المعتمدة
+    risk_score = 0
     
-    if os.path.exists("patients_data.csv"):
-        new_data.to_csv("patients_data.csv", mode='a', header=False, index=False, encoding='utf-8-sig')
-    else:
-        new_data.to_csv("patients_data.csv", index=False, encoding='utf-8-sig')
+    if glucose > 126: # مستوى السكر الصائم الذي قد يشير لسكري
+        risk_score += 2
+    if creatinine > 1.2: # مثال لقيمة كرياتينين مرتفعة للرجال
+        risk_score += 3
+    if age > 60:
+        risk_score += 1
         
-    st.success(f"تم تحليل بيانات {name}!")
+    if risk_score >= 4:
+        return "خطر مرتفع - يرجى مراجعة طبيب كلى"
+    elif risk_score >= 2:
+        return "خطر متوسط - يفضل إجراء فحوصات إضافية"
+    else:
+        return "خطر منخفض - يرجى المتابعة الدورية"
 
-st.markdown("---")
-st.subheader("📊 لوحة التحكم")
-if os.path.exists("patients_data.csv"):
-    df = pd.read_csv("patients_data.csv", encoding='utf-8-sig')
-    st.dataframe(df, use_container_width=True)
-    
-    
-    
+# واجهة المستخدم في Streamlit
+st.title("منصة نبراس الذكية")
+age = st.number_input("العمر", min_value=0, max_value=120)
+glucose = st.number_input("نسبة السكر في الدم")
+creatinine = st.number_input("مستوى الكرياتينين")
+gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
+
+if st.button("تحليل الحالة"):
+    result = calculate_kidney_risk(age, glucose, creatinine, gender)
+    st.write(f"النتيجة: {result}")
+
     
     
     
