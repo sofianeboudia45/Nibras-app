@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # أضف هذه الأسطر قبل زر التحليل في ملفك
 has_diabetes = st.checkbox("هل تعاني من مرض السكري؟")
 has_hypertension = st.checkbox("هل تعاني من ارتفاع ضغط الدم؟")
