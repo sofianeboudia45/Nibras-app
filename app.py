@@ -1,44 +1,34 @@
 import streamlit as st
-from supabase import create_client
+import pandas as pd
+import os
 
-# --- إعدادات السحابة ---
-# رابط مشروعك من Supabase
-SUPABASE_URL = "https://olzkwdoavnymhohmggdv.supabase.co" 
-# المفتاح السري (Service Role Key) الذي نسخته
-SUPABASE_KEY = "Sb_secret_f5ix5yXXaMbi1-nIHQgpIg_i9BTFEzc" 
+# 1. إعداد واجهة الإدخال
+name = st.text_input("اسم المريض")
+creatinine = st.number_input("الكرياتينين", min_value=0.0, format="%.2f")
+age = st.number_input("العمر", min_value=0.0, format="%.2f")
+gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# --- دالة الحساب ---
-def calculate_egfr(creatinine, age, gender):
-    return round(creatinine * 0.9, 2)
-
-# --- واجهة المستخدم ---
-st.title("🩺 منصة نبراس: عالمية")
-
-with st.sidebar:
-    name = st.text_input("اسم المريض")
-    creat = st.number_input("الكرياتينين")
-    age = st.number_input("العمر")
-    gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
+# 2. كود الحفظ البسيط
+if st.button("حفظ في السحابة"):
+    # تجهيز البيانات
+    data = {
+        "اسم المريض": [name],
+        "الكرياتينين": [creatinine],
+        "العمر": [age],
+        "الجنس": [gender]
+    }
+    df = pd.DataFrame(data)
     
-    if st.button("حفظ في السحابة 💾"):
-        egfr = calculate_egfr(creat, age, gender)
-        data = {
-            "patient_name": name,
-            "creatinine": creat,
-            "age": age,
-            "gender": gender,
-            "egfr": egfr
-        }
-        try:
-            supabase.table("patients_data").insert(data).execute()
-            st.success("تم الحفظ عالمياً!")
-        except Exception as e:
-            st.error(f"خطأ في الاتصال: {e}")
-            
+    # حفظ البيانات في ملف CSV
+    file_path = 'patients_data.csv'
     
-
+    # إذا كان الملف موجوداً نضيف عليه البيانات، إذا لم يكن موجوداً ننشئه
+    if os.path.exists(file_path):
+        df.to_csv(file_path, mode='a', header=False, index=False, encoding='utf-8-sig')
+    else:
+        df.to_csv(file_path, index=False, encoding='utf-8-sig')
+        
+    st.success("تم حفظ البيانات بنجاح في الملف!")
 
 
 
