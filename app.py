@@ -17,42 +17,50 @@ if 'history' not in st.session_state:
     st.session_state.history = []
 
 st.title("🩺 منصة نبراس الذكية")
-st.subheader("تحليل ومقارنة وظائف الكلى")
+st.subheader("تحليل وظائف الكلى - سجل المريض")
 st.markdown("---")
 
-# المدخلات
+# بيانات المريض الشخصية
+patient_name = st.text_input("اسم المريض 👤")
+patient_meds = st.text_area("الأدوية الحالية (إن وجدت) 💊")
+
+# المدخلات الطبية
 col1, col2 = st.columns(2)
 with col1:
     creatinine = st.number_input("الكرياتينين (mg/dL) 🧪", min_value=0.0, format="%.2f")
-    gender = st.selectbox("الجنس 👤", ["ذكر", "أنثى"])
+    gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
 with col2:
     age = st.number_input("العمر 📅", min_value=0, max_value=120)
-    st.write("") 
-    if st.button("تحليل الحالة الآن 🔍"):
+    if st.button("تحليل وإضافة للسجل 🔍"):
         if creatinine > 0 and age > 0:
             result = calculate_egfr(creatinine, age, gender)
-            # إضافة النتيجة للتاريخ
-            entry = {"التوقيت": datetime.now().strftime("%H:%M"), "eGFR": result}
+            entry = {
+                "التوقيت": datetime.now().strftime("%H:%M"), 
+                "النتيجة (eGFR)": result
+            }
             st.session_state.history.append(entry)
-            st.metric(label="معدل الترشيح الكبيبي الحالي (eGFR)", value=f"{result} ml/min")
+            st.success(f"تم تسجيل النتيجة: {result}")
         else:
             st.error("يرجى إدخال قيم صحيحة.")
 
 # عرض السجل والتقرير
 if st.session_state.history:
-    st.markdown("### 📊 سجل النتائج والمقارنة")
+    st.markdown("### 📊 سجل النتائج")
     st.table(st.session_state.history)
     
-    # تحضير نص التقرير للتحميل (يحتوي على كامل السجل الحالي)
-    report_text = "تقرير منصة نبراس - سجل النتائج\n\n"
+    # نص التقرير المحدث
+    report_text = f"تقرير منصة نبراس الذكية\n"
+    report_text += f"التاريخ: {datetime.now().strftime('%Y-%m-%d')}\n"
+    report_text += f"اسم المريض: {patient_name}\n"
+    report_text += f"الأدوية: {patient_meds}\n"
+    report_text += "-"*30 + "\n"
     for item in st.session_state.history:
-        report_text += f"الوقت: {item['التوقيت']} | النتيجة: {item['eGFR']} ml/min\n"
+        report_text += f"الوقت: {item['التوقيت']} | النتيجة: {item['النتيجة (eGFR)']} ml/min\n"
     
-    # زر التحميل
     st.download_button(
-        label="📥 تحميل سجل النتائج كملف نصي",
+        label="📥 تحميل التقرير الكامل",
         data=report_text.encode('utf-8-sig'),
-        file_name="nibras_report.txt",
+        file_name="nibras_medical_report.txt",
         mime="text/plain"
     )
     
@@ -61,7 +69,8 @@ if st.session_state.history:
         st.rerun()
 
 st.markdown("---")
-st.caption("⚠️ إخلاء مسؤولية: للاسترشاد فقط. يرجى مراجعة الطبيب.")
+st.caption("⚠️ إخلاء مسؤولية: هذه المنصة للاسترشاد فقط. يرجى مراجعة الطبيب.")
+
     
         
 
