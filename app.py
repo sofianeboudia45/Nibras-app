@@ -5,16 +5,14 @@ import os
 # إعداد الصفحة
 st.set_page_config(page_title="منصة نبراس الذكية", page_icon="🩺", layout="centered")
 
-# إضافة صورتك الشخصية في أعلى التطبيق
-# الكود يبحث عن الملف بالاسم الموجود حالياً في مستودعك
+# إضافة صورتك الشخصية بحجم كبير وعرض كامل
 image_file = "my_photo.jpg.jpg"
 
 if os.path.exists(image_file):
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.image(image_file, caption="المطور: سفيان بودية", use_container_width=True)
+    # الصورة ستأخذ كامل عرض الصفحة
+    st.image(image_file, caption="المطور: سفيان بودية", use_container_width=True)
 else:
-    st.error(f"خطأ: الملف {image_file} غير موجود في المجلد.")
+    st.warning("الصورة غير موجودة، يرجى التأكد من اسم الملف في المستودع.")
 
 st.markdown("<h1 style='text-align: center;'>🩺 منصة نبراس الذكية</h1>", unsafe_allow_html=True)
 
@@ -41,6 +39,7 @@ st.subheader("📊 لوحة التحكم")
 if os.path.exists("patients_data.csv"):
     df = pd.read_csv("patients_data.csv", encoding='utf-8-sig')
     st.dataframe(df, use_container_width=True)
+    
     
     
     
