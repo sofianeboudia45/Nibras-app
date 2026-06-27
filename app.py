@@ -38,13 +38,24 @@ if predict_btn and name:
     st.download_button("📥 Download Report as PDF", data=pdf_data, file_name=f"{name}_report.pdf", mime="application/pdf")
 
 st.markdown("---")
+# العرض - كود محدث لتجنب KeyError
+st.markdown("---")
 st.subheader("📊 Dashboard")
 if os.path.exists("patients_data.csv"):
     df = pd.read_csv("patients_data.csv")
-    st.bar_chart(df.set_index("Name")["Glucose"])
-    st.table(df)
     
+    # التأكد من أن الأعمدة هي باللغة الإنجليزية كما نستخدمها في التطبيق
+    expected_columns = ["Name", "Age", "Glucose", "Result"]
     
+    # إذا كانت الأعمدة في الملف القديم لا تطابق الأسماء المطلوبة، سنحذف الملف ونعيد تحميل الصفحة
+    if list(df.columns) != expected_columns:
+        os.remove("patients_data.csv")
+        st.rerun()
+    else:
+        # عرض الرسم البياني والجدول إذا كانت البيانات صحيحة
+        st.bar_chart(df.set_index("Name")["Glucose"])
+        st.table(df)
+        
 
 
 
