@@ -1,63 +1,34 @@
-import streamlit as st
-import pandas as pd
-import os
+import math
 
-# إعداد الصفحة
-st.set_page_config(page_title="نبراس - الجزائر", page_icon="🇩🇿")
-
-st.title("🇩🇿 بوابة نبراس الصحية")
-st.subheader("تحليل ذكي للحالة الصحية للمريض")
-st.markdown("---")
-
-col1, col2 = st.columns(2)
-
-with col1:
-    name = st.text_input("اسم المريض")
-    gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
-    age = st.number_input("العمر (سنة)", min_value=0.0, format="%.1f")
-
-with col2:
-    creatinine = st.number_input("الكرياتينين (mg/dL)", min_value=0.0, format="%.2f")
-    sugar = st.number_input("نسبة السكر (mg/dL)", min_value=0.0, format="%.1f")
-
-# دالة التحليل الذكي (المنطق الطبي المبسط)
-def analyze_health(creatinine, sugar):
-    if creatinine > 1.3 or sugar > 200:
-        return "⚠️ حالة حرجة: يرجى مراجعة الطبيب فوراً", "error"
-    elif creatinine > 1.1 or sugar > 140:
-        return "⚖️ حالة تحت المراقبة: بحاجة لضبط الحمية", "warning"
-    else:
-        return "✅ حالة جيدة: النتائج ضمن النطاق الطبيعي", "success"
-
-# تنفيذ التحليل عند الضغط
-if st.button("🔍 تحليل الحالة"):
-    analysis_result, type = analyze_health(creatinine, sugar)
+def calculate_egfr(creatinine, age, gender):
+    """
+    حساب معدل الترشيح الكبيبي المقدر (eGFR) باستخدام معادلة CKD-EPI 2021.
     
-    if type == "error":
-        st.error(analysis_result)
-    elif type == "warning":
-        st.warning(analysis_result)
-    else:
-        st.success(analysis_result)
+    :param creatinine: مستوى الكرياتينين (mg/dL)
+    :param age: عمر المريض (بالسنوات)
+    :param gender: 'male' للذكر أو 'female' للأنثى
+    :return: قيمة eGFR
+    """
+    
+    # الثوابت للمعادلة
+    if gender.lower() == 'female':
+        k = 0.7
+        alpha = -0.241 if creatinine <= k else -1.200
+        a = 144
+    else:  # للذكر
+        k = 0.9
+        alpha = -0.302 if creatinine <= k else -1.200
+        a = 141
+        
+    # المعادلة
+    egfr = a * ((creatinine / k) ** alpha) * (0.9938 ** age)
+    return round(egfr, 2)
 
-    # زر إضافي لحفظ النتيجة
-    if st.button("💾 حفظ النتيجة في السجل"):
-        data = {
-            "اسم المريض": [name],
-            "الكرياتينين": [creatinine],
-            "السكر": [sugar],
-            "النتيجة": [analysis_result]
-        }
-        df = pd.DataFrame(data)
-        file_path = 'patients_data.csv'
-        if os.path.exists(file_path):
-            df.to_csv(file_path, mode='a', header=False, index=False, encoding='utf-8-sig')
-        else:
-            df.to_csv(file_path, index=False, encoding='utf-8-sig')
-        st.success("تم الحفظ بنجاح!")
+# مثال على استخدام الدالة بناءً على بيانات المريض في 2106.jpg:
+# الذكر، 88 سنة، الكرياتينين 0.98
+result = calculate_egfr(creatinine=0.98, age=88, gender='male')
+print(f"معدل eGFR المقدر: {result} مل/دقيقة/1.73م²")
 
-st.markdown("---")
-st.caption("نبراس - صنع في الجزائر بفخر 🇩🇿")
                            
     
     
