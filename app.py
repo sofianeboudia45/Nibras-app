@@ -1,4 +1,6 @@
-import streamlit as st
+
+    
+    import streamlit as st
 import pandas as pd
 import os
 from fpdf import FPDF
@@ -16,25 +18,42 @@ def create_pdf(name, age, glucose, result):
     pdf.cell(200, 10, txt=f"النتيجة: {result}", ln=True)
     return pdf.output(dest='S').encode('latin-1')
 
-# كود التطبيق
-# (باقي الكود كما هو، أضف فقط جزء التحميل أدناه)
-# بعد زر "تحليل وحفظ النتيجة" مباشرة داخل if predict_btn:
+st.set_page_config(page_title="منصة نبراس الذكية", layout="wide")
+st.markdown("<h1 style='text-align: center; color: #2E86C1;'>🩺 منصة نبراس الذكية</h1>", unsafe_allow_html=True)
 
-# في مكان عرض النتيجة (بعد عملية التحليل والحفظ)
-if predict_btn and name:
-    # ... (كود الحفظ السابق) ...
+# المدخلات
+with st.sidebar:
+    st.header("⚙️ بيانات الفحص")
+    name = st.text_input("اسم المريض")
+    age = st.number_input("العمر", value=30)
+    glucose = st.number_input("مستوى السكر", value=100)
+    predict_btn = st.button("تحليل وحفظ النتيجة")
+
+# المنطق والتحليل
+if predict_btn:
+    result = "تتطلب استشارة" if glucose > 140 else "طبيعية"
     
-    # زر تحميل التقرير
+    # حفظ في ملف
+    new_data = pd.DataFrame({"الاسم": [name], "العمر": [age], "السكر": [glucose], "النتيجة": [result]})
+    if os.path.exists("patients_data.csv"):
+        new_data.to_csv("patients_data.csv", mode='a', header=False, index=False, encoding='utf-8-sig')
+    else:
+        new_data.to_csv("patients_data.csv", index=False, encoding='utf-8-sig')
+    
+    st.success(f"تم تحليل حالة {name} بنجاح!")
+    
+    # زر التحميل
     pdf_data = create_pdf(name, age, glucose, result)
-    st.download_button(
-        label="📥 تحميل التقرير كـ PDF",
-        data=pdf_data,
-        file_name=f"{name}_report.pdf",
-        mime="application/pdf"
-    )
-    
-    
-    
+    st.download_button("📥 تحميل التقرير كـ PDF", data=pdf_data, file_name=f"{name}_report.pdf", mime="application/pdf")
+
+# العرض
+st.markdown("---")
+st.subheader("📊 لوحة التحكم")
+if os.path.exists("patients_data.csv"):
+    df = pd.read_csv("patients_data.csv")
+    st.bar_chart(df.set_index("الاسم")["السكر"])
+    st.table(df)
+
 
 
 
