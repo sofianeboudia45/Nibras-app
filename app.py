@@ -1,55 +1,38 @@
 import streamlit as st
 import pandas as pd
 import os
+from fpdf import FPDF
 
-DATA_FILE = "patients_data.csv"
+# إعداد ملف PDF
+def create_pdf(name, age, glucose, result):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(200, 10, txt="تقرير منصة نبراس الذكية", ln=True, align='C')
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt=f"الاسم: {name}", ln=True)
+    pdf.cell(200, 10, txt=f"العمر: {age}", ln=True)
+    pdf.cell(200, 10, txt=f"مستوى السكر: {glucose}", ln=True)
+    pdf.cell(200, 10, txt=f"النتيجة: {result}", ln=True)
+    return pdf.output(dest='S').encode('latin-1')
 
-st.set_page_config(page_title="منصة نبراس الذكية", layout="wide")
+# كود التطبيق
+# (باقي الكود كما هو، أضف فقط جزء التحميل أدناه)
+# بعد زر "تحليل وحفظ النتيجة" مباشرة داخل if predict_btn:
 
-st.markdown("<h1 style='text-align: center; color: #2E86C1;'>🩺 منصة نبراس الذكية</h1>", unsafe_allow_html=True)
-
-# 1. المدخلات
-with st.sidebar:
-    st.header("⚙️ بيانات الفحص")
-    name = st.text_input("اسم المريض")
-    age = st.number_input("العمر", value=30)
-    glucose = st.number_input("مستوى السكر", value=100)
-    predict_btn = st.button("تحليل وحفظ النتيجة")
-
-def analyze_health(glucose):
-    return "تتطلب استشارة" if glucose > 140 else "طبيعية"
-
+# في مكان عرض النتيجة (بعد عملية التحليل والحفظ)
 if predict_btn and name:
-    result = analyze_health(glucose)
-    new_data = pd.DataFrame({"الاسم": [name], "العمر": [age], "السكر": [glucose], "النتيجة": [result]})
-    if os.path.exists(DATA_FILE):
-        new_data.to_csv(DATA_FILE, mode='a', header=False, index=False, encoding='utf-8-sig')
-    else:
-        new_data.to_csv(DATA_FILE, index=False, encoding='utf-8-sig')
-    st.success("تم الحفظ!")
-
-# 2. لوحة التحكم الإحصائية (الجديد)
-st.markdown("---")
-st.subheader("📊 لوحة التحكم الإحصائية")
-
-if os.path.exists(DATA_FILE):
-    df = pd.read_csv(DATA_FILE)
+    # ... (كود الحفظ السابق) ...
     
-    # تقسيم الشاشة إلى عمودين
-    col1, col2 = st.columns(2)
+    # زر تحميل التقرير
+    pdf_data = create_pdf(name, age, glucose, result)
+    st.download_button(
+        label="📥 تحميل التقرير كـ PDF",
+        data=pdf_data,
+        file_name=f"{name}_report.pdf",
+        mime="application/pdf"
+    )
     
-    with col1:
-        st.write("معدل السكر للمرضى:")
-        st.bar_chart(df.set_index("الاسم")["السكر"])
-    
-    with col2:
-        st.write("توزيع الأعمار:")
-        st.line_chart(df.set_index("الاسم")["العمر"])
-        
-    st.subheader("📋 سجل المرضى المسجلين")
-    st.table(df)
-else:
-    st.write("أدخل بياناتك لتظهر الإحصائيات.")
     
     
 
