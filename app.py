@@ -1,33 +1,21 @@
-import streamlit as st
-def calculate_kidney_risk(age, glucose, creatinine, gender):
-    # هذه معادلة افتراضية تبسيطية لأغراض التدريب
-    # في التطبيق النهائي سنستخدم معادلة CKD-EPI المعتمدة
-    risk_score = 0
+import math
+def calculate_egfr(creatinine, age, gender):
+    # تحويل الكرياتينين لـ mg/dL إذا كان بوحدة أخرى (هذه المعادلة تفترض mg/dL)
+    # المعادلة المعتمدة CKD-EPI 2021
+    if gender == "أنثى":
+        kappa = 0.7
+        alpha = -0.241
+        gender_factor = 1.012
+    else: # ذكر
+        kappa = 0.9
+        alpha = -0.302
+        gender_factor = 1.0
+
+    # المعادلة الرياضية
+    eGFR = 142 * (min(creatinine/kappa, 1)**alpha) * (max(creatinine/kappa, 1)**-1.200) * (0.9938**age) * gender_factor
     
-    if glucose > 126: # مستوى السكر الصائم الذي قد يشير لسكري
-        risk_score += 2
-    if creatinine > 1.2: # مثال لقيمة كرياتينين مرتفعة للرجال
-        risk_score += 3
-    if age > 60:
-        risk_score += 1
-        
-    if risk_score >= 4:
-        return "خطر مرتفع - يرجى مراجعة طبيب كلى"
-    elif risk_score >= 2:
-        return "خطر متوسط - يفضل إجراء فحوصات إضافية"
-    else:
-        return "خطر منخفض - يرجى المتابعة الدورية"
-
-# واجهة المستخدم في Streamlit
-st.title("منصة نبراس الذكية")
-age = st.number_input("العمر", min_value=0, max_value=120)
-glucose = st.number_input("نسبة السكر في الدم")
-creatinine = st.number_input("مستوى الكرياتينين")
-gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
-
-if st.button("تحليل الحالة"):
-    result = calculate_kidney_risk(age, glucose, creatinine, gender)
-    st.write(f"النتيجة: {result}")
+    return round(eGFR, 2)
+    
 
     
     
