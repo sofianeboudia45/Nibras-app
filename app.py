@@ -20,14 +20,26 @@ def calculate_egfr(creatinine, age, gender):
     a = 144 if gender == 'female' else 141
     return round(a * ((creatinine / k) ** alpha) * (0.9938 ** age), 2)
 
-# 3. واجهة التطبيق
+# 3. دالة تصنيف الحالة
+def get_egfr_interpretation(egfr):
+    if egfr >= 90:
+        return "طبيعي (وظائف الكلى سليمة)", "success"
+    elif 60 <= egfr < 90:
+        return "انخفاض طفيف (مقبول)", "info"
+    elif 30 <= egfr < 60:
+        return "انخفاض متوسط (يستوجب مراجعة الطبيب)", "warning"
+    elif 15 <= egfr < 30:
+        return "انخفاض شديد (خطر)", "error"
+    else:
+        return "فشل كلوي (حالة حرجة)", "error"
+
+# 4. واجهة التطبيق
 st.title("نبراس - أداة التحليل السريري")
 
 if 'egfr_val' not in st.session_state:
     st.session_state.egfr_val = None
 
 st.subheader("بيانات المريض")
-
 gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
 age = st.number_input("العمر (سنة)", min_value=0, max_value=120, value=50)
 creatinine = st.number_input("الكرياتينين (mg/dL)", min_value=0.0, value=1.0, step=0.01)
@@ -39,9 +51,14 @@ if st.button("تحليل الحالة"):
     st.session_state.egfr_val = calculate_egfr(creatinine, age, gender_en)
     st.session_state.last_data = (gender, age, creatinine, glucose, st.session_state.egfr_val)
     
-    # عرض النتيجة بشكل واضح
-    st.success("تم حساب التحليل بنجاح")
+    # عرض النتيجة والتقييم
     st.metric(label="معدل الترشيح الكبيبي المقدر (eGFR)", value=f"{st.session_state.egfr_val} mL/min/1.73m²")
+    
+    interpretation, status = get_egfr_interpretation(st.session_state.egfr_val)
+    if status == "success": st.success(f"التقييم: {interpretation}")
+    elif status == "info": st.info(f"التقييم: {interpretation}")
+    elif status == "warning": st.warning(f"التقييم: {interpretation}")
+    else: st.error(f"التقييم: {interpretation}")
 
 # زر الحفظ
 if st.button("حفظ النتيجة في السجل"):
@@ -52,7 +69,7 @@ if st.button("حفظ النتيجة في السجل"):
                   (datetime.now().strftime("%Y-%m-%d"), *st.session_state.last_data))
         conn.commit()
         conn.close()
-        st.success("تم حفظ البيانات في السجل!")
+        st.success("تم الحفظ!")
     else:
-        st.error("يرجى إجراء التحليل أولاً قبل الحفظ.")
-    
+        st.error("يرجى إجراء التحليل أولاً.")
+        
