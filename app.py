@@ -3,12 +3,15 @@ import sqlite3
 import pandas as pd
 from datetime import datetime
 
-# إعداد قاعدة البيانات
+# إعداد قاعدة البيانات (هيكلية محسنة)
 def init_db():
     conn = sqlite3.connect('nibras_records.db')
     c = conn.cursor()
+    # أضفنا معرف فريد (ID) لتسهيل إدارة السجلات
     c.execute('''CREATE TABLE IF NOT EXISTS patients 
-                 (date TEXT, name TEXT, gender TEXT, age REAL, creatinine REAL, glucose REAL, egfr REAL)''')
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                  date TEXT, name TEXT, gender TEXT, age REAL, 
+                  creatinine REAL, glucose REAL, egfr REAL)''')
     conn.commit()
     conn.close()
 
@@ -21,37 +24,44 @@ def calculate_egfr(creatinine, age, gender):
     a = 144 if gender == 'female' else 141
     return round(a * ((creatinine / k) ** alpha) * (0.9938 ** age), 2)
 
-# الواجهة
-st.title("نبراس - أداة التحليل السريري 🩺")
+# واجهة التطبيق
+st.set_page_config(page_title="Nibras Pro", layout="wide")
+st.title("نبراس - المنصة الطبية الرقمية 🩺")
 
-tab1, tab2 = st.tabs(["تحليل جديد", "سجل المرضى 📋"])
+tab1, tab2 = st.tabs(["📊 التحليل السريري", "📋 سجل المرضى والأرشيف"])
 
 with tab1:
-    patient_name = st.text_input("اسم المريض")
-    gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
-    age = st.number_input("العمر (سنة)", min_value=0, value=50)
-    creatinine = st.number_input("الكرياتينين (mg/dL)", min_value=0.0, value=1.0, step=0.01)
-    glucose = st.number_input("نسبة السكر (mg/dL)", min_value=0.0, value=90.0)
+    col1, col2 = st.columns(2)
+    with col1:
+        patient_name = st.text_input("اسم المريض")
+        gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
+        age = st.number_input("العمر (سنة)", min_value=0, value=50)
+    with col2:
+        creatinine = st.number_input("الكرياتينين (mg/dL)", min_value=0.0, value=1.0, step=0.01)
+        glucose = st.number_input("نسبة السكر (mg/dL)", min_value=0.0, value=90.0)
     
-    if st.button("تحليل الحالة 🔬"):
+    if st.button("حفظ التحليل 💾"):
         gender_en = 'male' if gender == "ذكر" else 'female'
         egfr = calculate_egfr(creatinine, age, gender_en)
-        st.metric(label="eGFR", value=f"{egfr} mL/min/1.73m²")
         
-        # حفظ النتيجة تلقائياً في السجل عند التحليل
         conn = sqlite3.connect('nibras_records.db')
         c = conn.cursor()
-        c.execute("INSERT INTO patients VALUES (?,?,?,?,?,?,?)", 
-                  (datetime.now().strftime("%Y-%m-%d"), patient_name, gender, age, creatinine, glucose, egfr))
+        c.execute("INSERT INTO patients (date, name, gender, age, creatinine, glucose, egfr) VALUES (?,?,?,?,?,?,?)", 
+                  (datetime.now().strftime("%Y-%m-%d %H:%M"), patient_name, gender, age, creatinine, glucose, egfr))
         conn.commit()
         conn.close()
-        st.success("تم إجراء التحليل وحفظ النتيجة في السجل!")
+        st.metric(label="النتيجة (eGFR)", value=f"{egfr} mL/min/1.73m²")
+        st.success("تم حفظ البيانات في الأرشيف بنجاح!")
 
 with tab2:
-    st.subheader("سجل المرضى")
-    if st.button("تحديث السجلات 🔄"):
-        conn = sqlite3.connect('nibras_records.db')
-        df = pd.read_sql_query("SELECT * FROM patients", conn)
-        conn.close()
-        st.dataframe(df)
-        
+    st.subheader("أرشيف المرضى")
+    conn = sqlite3.connect('nibras_records.db')
+    df = pd.read_sql_query("SELECT * FROM patients", conn)
+    conn.close()
+    
+    st.dataframe(df, use_container_width=True)
+    
+    # ميزة تصدير البيانات (قيمة تجارية مضافة)
+    if not df.empty:
+        csv = df.to_csv(index=False).encode('utf-8-sig') # ترميز utf-8-sig لدعم العربية في Excel
+        st.download_button("📥 تصدير السجلات إلى Excel", csv, "Nibras_Records.csv", "text/csv")
