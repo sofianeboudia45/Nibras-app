@@ -2,7 +2,6 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime
-from fpdf import FPDF
 
 # إعداد قاعدة البيانات
 def init_db():
@@ -14,22 +13,6 @@ def init_db():
     conn.close()
 
 init_db()
-
-# دالة PDF معدلة: تعتمد على المخرجات الخام لتجنب UnicodeEncodeError
-def create_pdf(age, gender, creatinine, glucose, egfr):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(200, 10, txt="Nibras Clinical Report", ln=True, align='C')
-    pdf.set_font("Arial", size=12)
-    pdf.ln(10)
-    # استخدام نص إنجليزي فقط لضمان التوافق التام
-    pdf.cell(200, 10, txt=f"Patient Age: {age} | Gender: {gender}", ln=True)
-    pdf.cell(200, 10, txt=f"Creatinine: {creatinine} mg/dL", ln=True)
-    pdf.cell(200, 10, txt=f"Glucose: {glucose} mg/dL", ln=True)
-    pdf.cell(200, 10, txt=f"Estimated eGFR: {egfr} mL/min/1.73m2", ln=True)
-    # المخرجات بدون ترميز قسري لتجنب انهيار التطبيق
-    return pdf.output(dest='S')
 
 # دالة الحساب
 def calculate_egfr(creatinine, age, gender):
@@ -55,16 +38,17 @@ with tab1:
         egfr = calculate_egfr(creatinine, age, gender_en)
         st.metric(label="eGFR", value=f"{egfr} mL/min/1.73m²")
         
-        # زر تحميل التقرير
-        pdf_data = create_pdf(age, gender, creatinine, glucose, egfr)
-        st.download_button(
-            label="تحميل التقرير PDF 📄", 
-            data=pdf_data, 
-            file_name="report.pdf",
-            mime="application/pdf"
-        )
+        # حفظ النتيجة تلقائياً في السجل عند التحليل
+        conn = sqlite3.connect('nibras_records.db')
+        c = conn.cursor()
+        c.execute("INSERT INTO patients VALUES (?,?,?,?,?,?,?)", 
+                  (datetime.now().strftime("%Y-%m-%d"), patient_name, gender, age, creatinine, glucose, egfr))
+        conn.commit()
+        conn.close()
+        st.success("تم إجراء التحليل وحفظ النتيجة في السجل!")
 
 with tab2:
+    st.subheader("سجل المرضى")
     if st.button("تحديث السجلات 🔄"):
         conn = sqlite3.connect('nibras_records.db')
         df = pd.read_sql_query("SELECT * FROM patients", conn)
