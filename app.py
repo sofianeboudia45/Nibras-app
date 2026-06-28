@@ -70,9 +70,4 @@ with tab2:
         df = pd.read_sql_query("SELECT * FROM patients", conn)
         conn.close()
         st.dataframe(df)
-        with tab2:
-    if st.button("تحديث السجلات 🔄"):
-        conn = sqlite3.connect('nibras_records.db')
-        df = pd.read_sql_query("SELECT * FROM patients", conn)
-        conn.close()
-        st.dataframe(df)
+        
