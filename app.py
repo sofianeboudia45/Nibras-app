@@ -23,25 +23,27 @@ def calculate_egfr(creatinine, age, gender):
 # 3. واجهة التطبيق
 st.title("نبراس - أداة التحليل السريري")
 
-# استخدام session_state لتخزين القيم
+# استخدام session_state لتخزين القيم لضمان استمراريتها
 if 'egfr_val' not in st.session_state:
     st.session_state.egfr_val = None
 
-st.sidebar.header("بيانات المريض")
-gender = st.sidebar.selectbox("الجنس", ["ذكر", "أنثى"])
-age = st.sidebar.number_input("العمر (سنة)", value=50)
-creatinine = st.sidebar.number_input("الكرياتينين (mg/dL)", value=1.0, step=0.01)
-glucose = st.sidebar.number_input("نسبة السكر (mg/dL)", value=90)
+st.subheader("بيانات المريض")
+
+# نقل الحقول إلى الواجهة الرئيسية بدلاً من الشريط الجانبي لتظهر بوضوح في الهاتف
+gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
+age = st.number_input("العمر (سنة)", min_value=0, max_value=120, value=50)
+creatinine = st.number_input("الكرياتينين (mg/dL)", min_value=0.0, value=1.0, step=0.01)
+glucose = st.number_input("نسبة السكر (mg/dL)", min_value=0.0, value=90.0)
 
 # زر التحليل
-if st.sidebar.button("تحليل الحالة"):
+if st.button("تحليل الحالة"):
     gender_en = 'male' if gender == "ذكر" else 'female'
     st.session_state.egfr_val = calculate_egfr(creatinine, age, gender_en)
     st.session_state.last_data = (gender, age, creatinine, glucose, st.session_state.egfr_val)
     st.success(f"النتيجة: {st.session_state.egfr_val}")
 
-# زر الحفظ (يستخدم البيانات المخزنة في session_state)
-if st.sidebar.button("حفظ النتيجة في السجل"):
+# زر الحفظ
+if st.button("حفظ النتيجة في السجل"):
     if st.session_state.egfr_val is not None:
         conn = sqlite3.connect('nibras_records.db')
         c = conn.cursor()
@@ -49,6 +51,7 @@ if st.sidebar.button("حفظ النتيجة في السجل"):
                   (datetime.now().strftime("%Y-%m-%d"), *st.session_state.last_data))
         conn.commit()
         conn.close()
-        st.sidebar.success("تم الحفظ!")
+        st.success("تم حفظ البيانات بنجاح!")
     else:
-        st.sidebar.error("يرجى الضغط على 'تحليل الحالة' أولاً.")
+        st.error("يرجى إجراء التحليل أولاً قبل الحفظ.")
+        
