@@ -2,44 +2,48 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime
-from fpdf import FPDF # مكتبة إنشاء الـ PDF
 
-# دالة إنشاء ملف PDF
-def create_pdf(name, age, gender, creatinine, glucose, egfr, interpretation):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(200, 10, txt="Nibras Clinical Report - تقرير نبراس الطبي", ln=True, align='C')
-    pdf.set_font("Arial", size=12)
-    pdf.ln(10)
-    pdf.cell(200, 10, txt=f"Date: {datetime.now().strftime('%Y-%m-%d')}", ln=True)
-    pdf.cell(200, 10, txt=f"Patient Name: {name}", ln=True)
-    pdf.cell(200, 10, txt=f"Age: {age} | Gender: {gender}", ln=True)
-    pdf.ln(5)
-    pdf.cell(200, 10, txt=f"Creatinine: {creatinine} mg/dL | Glucose: {glucose} mg/dL", ln=True)
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(200, 10, txt=f"Result (eGFR): {egfr} mL/min/1.73m2", ln=True)
-    pdf.cell(200, 10, txt=f"Interpretation: {interpretation}", ln=True)
-    return pdf.output(dest='S').encode('latin-1')
+# إعداد قاعدة البيانات
+def init_db():
+    conn = sqlite3.connect('nibras_records.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS patients 
+                 (date TEXT, name TEXT, gender TEXT, age REAL, creatinine REAL, glucose REAL, egfr REAL)''')
+    conn.commit()
+    conn.close()
 
-# (بقية الدوال: init_db, calculate_egfr, get_egfr_interpretation كما هي في الكود السابق)
-# ...
+init_db()
 
-# في جزء الواجهة (tab1) عند التحليل:
+# معادلة eGFR
+def calculate_egfr(creatinine, age, gender):
+    k = 0.7 if gender == 'female' else 0.9
+    alpha = -0.241 if (gender == 'female' and creatinine <= k) else (-1.200 if (gender == 'female' and creatinine > k) else (-0.302 if creatinine <= k else -1.200))
+    a = 144 if gender == 'female' else 141
+    return round(a * ((creatinine / k) ** alpha) * (0.9938 ** age), 2)
+
+# واجهة التطبيق
+st.title("نبراس - أداة التحليل السريري 🩺")
+st.subheader("الجزائر - الرعاية الصحية الرقمية 🇩🇿")
+
+tab1, tab2 = st.tabs(["تحليل جديد", "سجل المرضى 📋"])
+
+with tab1:
+    patient_name = st.text_input("اسم المريض")
+    gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
+    age = st.number_input("العمر (سنة)", min_value=0, value=50)
+    creatinine = st.number_input("الكرياتينين (mg/dL)", min_value=0.0, value=1.0, step=0.01)
+    
     if st.button("تحليل الحالة 🔬"):
-        # ... (حساب النتيجة) ...
-        interpretation, status = get_egfr_interpretation(egfr)
-        
-        # عرض النتيجة
-        st.metric("eGFR", f"{egfr} mL/min/1.73m²")
-        
-        # زر تحميل التقرير
-        pdf_data = create_pdf(patient_name, age, gender, creatinine, glucose, egfr, interpretation)
-        st.download_button(
-            label="تحميل التقرير بصيغة PDF 📄",
-            data=pdf_data,
-            file_name=f"Report_{patient_name}.pdf",
-            mime="application/pdf"
-        )
-        
+        gender_en = 'male' if gender == "ذكر" else 'female'
+        egfr = calculate_egfr(creatinine, age, gender_en)
+        st.metric(label="معدل الترشيح الكبيبي المقدر (eGFR)", value=f"{egfr} mL/min/1.73m²")
+        st.session_state.last_data = (patient_name, gender, age, creatinine, 0, egfr)
+        st.success("تم التحليل")
+
+with tab2:
+    if st.button("تحديث السجلات 🔄"):
+        conn = sqlite3.connect('nibras_records.db')
+        df = pd.read_sql_query("SELECT * FROM patients", conn)
+        conn.close()
+        st.dataframe(df)
         
