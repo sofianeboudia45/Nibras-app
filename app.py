@@ -15,15 +15,18 @@ def init_db():
 
 init_db()
 
-# دالة PDF
+# دالة PDF معدلة لتجنب الخطأ
 def create_pdf(name, age, gender, creatinine, glucose, egfr):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(200, 10, txt="Nibras Medical Report", ln=True, align='C')
     pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt=f"Patient: {name} | Age: {age} | Gender: {gender}", ln=True)
-    pdf.cell(200, 10, txt=f"Creatinine: {creatinine} | eGFR: {egfr}", ln=True)
+    # تصفية الاسم من أي حروف عربية لمنع الخطأ في 2121.jpg
+    safe_name = "".join([c if ord(c) < 128 else "" for c in name])
+    pdf.cell(200, 10, txt=f"Patient: {safe_name} | Age: {age} | Gender: {gender}", ln=True)
+    pdf.cell(200, 10, txt=f"Creatinine: {creatinine} mg/dL | Glucose: {glucose} mg/dL", ln=True)
+    pdf.cell(200, 10, txt=f"eGFR: {egfr} mL/min/1.73m2", ln=True)
     return pdf.output(dest='S').encode('latin-1')
 
 # دالة الحساب
@@ -43,6 +46,7 @@ with tab1:
     gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
     age = st.number_input("العمر (سنة)", min_value=0, value=50)
     creatinine = st.number_input("الكرياتينين (mg/dL)", min_value=0.0, value=1.0, step=0.01)
+    glucose = st.number_input("نسبة السكر (mg/dL)", min_value=0.0, value=90.0)
     
     if st.button("تحليل الحالة 🔬"):
         gender_en = 'male' if gender == "ذكر" else 'female'
@@ -50,7 +54,7 @@ with tab1:
         st.metric(label="eGFR", value=f"{egfr} mL/min/1.73m²")
         
         # زر تحميل PDF
-        pdf_data = create_pdf(patient_name, age, gender, creatinine, 0, egfr)
+        pdf_data = create_pdf(patient_name, age, gender, creatinine, glucose, egfr)
         st.download_button("تحميل التقرير PDF 📄", data=pdf_data, file_name="report.pdf")
 
 with tab2:
@@ -59,3 +63,4 @@ with tab2:
         df = pd.read_sql_query("SELECT * FROM patients", conn)
         conn.close()
         st.dataframe(df)
+    
