@@ -15,7 +15,7 @@ def init_db():
 
 init_db()
 
-# دالة PDF آمنة لمنع UnicodeEncodeError
+# دالة PDF معدلة: تعتمد على المخرجات الخام لتجنب UnicodeEncodeError
 def create_pdf(age, gender, creatinine, glucose, egfr):
     pdf = FPDF()
     pdf.add_page()
@@ -23,10 +23,13 @@ def create_pdf(age, gender, creatinine, glucose, egfr):
     pdf.cell(200, 10, txt="Nibras Clinical Report", ln=True, align='C')
     pdf.set_font("Arial", size=12)
     pdf.ln(10)
-    pdf.cell(200, 10, txt=f"Patient Details (Age: {age}, Gender: {gender})", ln=True)
-    pdf.cell(200, 10, txt=f"Creatinine: {creatinine} mg/dL | Glucose: {glucose} mg/dL", ln=True)
+    # استخدام نص إنجليزي فقط لضمان التوافق التام
+    pdf.cell(200, 10, txt=f"Patient Age: {age} | Gender: {gender}", ln=True)
+    pdf.cell(200, 10, txt=f"Creatinine: {creatinine} mg/dL", ln=True)
+    pdf.cell(200, 10, txt=f"Glucose: {glucose} mg/dL", ln=True)
     pdf.cell(200, 10, txt=f"Estimated eGFR: {egfr} mL/min/1.73m2", ln=True)
-    return pdf.output(dest='S').encode('latin-1')
+    # المخرجات بدون ترميز قسري لتجنب انهيار التطبيق
+    return pdf.output(dest='S')
 
 # دالة الحساب
 def calculate_egfr(creatinine, age, gender):
@@ -52,9 +55,14 @@ with tab1:
         egfr = calculate_egfr(creatinine, age, gender_en)
         st.metric(label="eGFR", value=f"{egfr} mL/min/1.73m²")
         
-        # زر تحميل PDF (تم حذف الاسم من الدالة لتجنب الخطأ)
+        # زر تحميل التقرير
         pdf_data = create_pdf(age, gender, creatinine, glucose, egfr)
-        st.download_button("تحميل التقرير PDF 📄", data=pdf_data, file_name="report.pdf")
+        st.download_button(
+            label="تحميل التقرير PDF 📄", 
+            data=pdf_data, 
+            file_name="report.pdf",
+            mime="application/pdf"
+        )
 
 with tab2:
     if st.button("تحديث السجلات 🔄"):
@@ -62,4 +70,9 @@ with tab2:
         df = pd.read_sql_query("SELECT * FROM patients", conn)
         conn.close()
         st.dataframe(df)
-    
+        with tab2:
+    if st.button("تحديث السجلات 🔄"):
+        conn = sqlite3.connect('nibras_records.db')
+        df = pd.read_sql_query("SELECT * FROM patients", conn)
+        conn.close()
+        st.dataframe(df)
