@@ -2,12 +2,12 @@ import streamlit as st
 import sqlite3
 from datetime import datetime
 
-# 1. إعداد قاعدة البيانات
+# 1. إعداد قاعدة البيانات (تمت إضافة عمود name)
 def init_db():
     conn = sqlite3.connect('nibras_records.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS patients 
-                 (date TEXT, gender TEXT, age REAL, creatinine REAL, glucose REAL, egfr REAL)''')
+                 (date TEXT, name TEXT, gender TEXT, age REAL, creatinine REAL, glucose REAL, egfr REAL)''')
     conn.commit()
     conn.close()
 
@@ -40,6 +40,7 @@ if 'egfr_val' not in st.session_state:
     st.session_state.egfr_val = None
 
 st.subheader("بيانات المريض")
+patient_name = st.text_input("اسم المريض") # خانة الاسم الجديدة
 gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
 age = st.number_input("العمر (سنة)", min_value=0, max_value=120, value=50)
 creatinine = st.number_input("الكرياتينين (mg/dL)", min_value=0.0, value=1.0, step=0.01)
@@ -49,9 +50,9 @@ glucose = st.number_input("نسبة السكر (mg/dL)", min_value=0.0, value=90
 if st.button("تحليل الحالة"):
     gender_en = 'male' if gender == "ذكر" else 'female'
     st.session_state.egfr_val = calculate_egfr(creatinine, age, gender_en)
-    st.session_state.last_data = (gender, age, creatinine, glucose, st.session_state.egfr_val)
+    # تخزين الاسم في الـ session_state
+    st.session_state.last_data = (patient_name, gender, age, creatinine, glucose, st.session_state.egfr_val)
     
-    # عرض النتيجة والتقييم
     st.metric(label="معدل الترشيح الكبيبي المقدر (eGFR)", value=f"{st.session_state.egfr_val} mL/min/1.73m²")
     
     interpretation, status = get_egfr_interpretation(st.session_state.egfr_val)
@@ -62,14 +63,15 @@ if st.button("تحليل الحالة"):
 
 # زر الحفظ
 if st.button("حفظ النتيجة في السجل"):
-    if st.session_state.egfr_val is not None:
+    if st.session_state.egfr_val is not None and patient_name:
         conn = sqlite3.connect('nibras_records.db')
         c = conn.cursor()
-        c.execute("INSERT INTO patients VALUES (?,?,?,?,?,?)", 
+        c.execute("INSERT INTO patients VALUES (?,?,?,?,?,?,?)", 
                   (datetime.now().strftime("%Y-%m-%d"), *st.session_state.last_data))
         conn.commit()
         conn.close()
-        st.success("تم الحفظ!")
+        st.success(f"تم حفظ بيانات المريض {patient_name} بنجاح!")
     else:
-        st.error("يرجى إجراء التحليل أولاً.")
+        st.error("يرجى إدخال اسم المريض وإجراء التحليل أولاً.")
+        
         
