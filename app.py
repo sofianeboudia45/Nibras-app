@@ -1,13 +1,14 @@
 import streamlit as st
 import sqlite3
+import pandas as pd
 from datetime import datetime
 
 # 1. إعداد قاعدة البيانات
 def init_db():
     conn = sqlite3.connect('nibras_records.db')
     c = conn.cursor()
-    c.execute('DROP TABLE IF EXISTS patients')
-    c.execute('''CREATE TABLE patients 
+    # أنشأنا الجدول مسبقاً، لا داعي لـ DROP إلا إذا أردت تحديث الهيكل
+    c.execute('''CREATE TABLE IF NOT EXISTS patients 
                  (date TEXT, name TEXT, gender TEXT, age REAL, creatinine REAL, glucose REAL, egfr REAL)''')
     conn.commit()
     conn.close()
@@ -23,59 +24,55 @@ def calculate_egfr(creatinine, age, gender):
 
 # 3. دالة تصنيف الحالة
 def get_egfr_interpretation(egfr):
-    if egfr >= 90:
-        return "طبيعي (وظائف الكلى سليمة) ✅", "success"
-    elif 60 <= egfr < 90:
-        return "انخفاض طفيف (مقبول) ⚠️", "info"
-    elif 30 <= egfr < 60:
-        return "انخفاض متوسط (يستوجب مراجعة الطبيب) 🩺", "warning"
-    elif 15 <= egfr < 30:
-        return "انخفاض شديد (خطر) ⚠️", "error"
-    else:
-        return "فشل كلوي (حالة حرجة) 🏥", "error"
+    if egfr >= 90: return "طبيعي (وظائف الكلى سليمة) ✅", "success"
+    elif 60 <= egfr < 90: return "انخفاض طفيف (مقبول) ⚠️", "info"
+    elif 30 <= egfr < 60: return "انخفاض متوسط (يستوجب مراجعة الطبيب) 🩺", "warning"
+    else: return "خطر / فشل كلوي 🏥", "error"
 
 # 4. واجهة التطبيق
 st.title("نبراس - أداة التحليل السريري 🩺")
 st.subheader("الجزائر - الرعاية الصحية الرقمية 🇩🇿")
 
-if 'egfr_val' not in st.session_state:
-    st.session_state.egfr_val = None
+# استخدام التبويبات للتنظيم
+tab1, tab2 = st.tabs(["تحليل جديد", "سجل المرضى 📋"])
 
-st.divider()
-st.subheader("بيانات المريض 📋")
-patient_name = st.text_input("اسم المريض")
-gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
-age = st.number_input("العمر (سنة)", min_value=0, max_value=120, value=50)
-creatinine = st.number_input("الكرياتينين (mg/dL)", min_value=0.0, value=1.0, step=0.01)
-glucose = st.number_input("نسبة السكر (mg/dL)", min_value=0.0, value=90.0)
+with tab1:
+    st.subheader("بيانات المريض")
+    patient_name = st.text_input("اسم المريض")
+    gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
+    age = st.number_input("العمر (سنة)", min_value=0, value=50)
+    creatinine = st.number_input("الكرياتينين (mg/dL)", min_value=0.0, value=1.0, step=0.01)
+    glucose = st.number_input("نسبة السكر (mg/dL)", min_value=0.0, value=90.0)
 
-# زر التحليل
-if st.button("تحليل الحالة 🔬"):
-    gender_en = 'male' if gender == "ذكر" else 'female'
-    st.session_state.egfr_val = calculate_egfr(creatinine, age, gender_en)
-    st.session_state.last_data = (patient_name, gender, age, creatinine, glucose, st.session_state.egfr_val)
-    
-    st.metric(label="معدل الترشيح الكبيبي المقدر (eGFR) 🧪", value=f"{st.session_state.egfr_val} mL/min/1.73m²")
-    
-    interpretation, status = get_egfr_interpretation(st.session_state.egfr_val)
-    if status == "success": st.success(f"التقييم: {interpretation}")
-    elif status == "info": st.info(f"التقييم: {interpretation}")
-    elif status == "warning": st.warning(f"التقييم: {interpretation}")
-    else: st.error(f"التقييم: {interpretation}")
-
-# زر الحفظ
-if st.button("حفظ النتيجة في السجل 💾"):
-    if st.session_state.egfr_val is not None and patient_name:
-        conn = sqlite3.connect('nibras_records.db')
-        c = conn.cursor()
-        c.execute("INSERT INTO patients VALUES (?,?,?,?,?,?,?)", 
-                  (datetime.now().strftime("%Y-%m-%d"), *st.session_state.last_data))
-        conn.commit()
-        conn.close()
-        st.success(f"تم حفظ بيانات المريض {patient_name} بنجاح!")
-    else:
-        st.error("يرجى إدخال اسم المريض وإجراء التحليل أولاً.")
-                                         
-    
+    if st.button("تحليل الحالة 🔬"):
+        gender_en = 'male' if gender == "ذكر" else 'female'
+        egfr = calculate_egfr(creatinine, age, gender_en)
+        st.session_state.last_data = (patient_name, gender, age, creatinine, glucose, egfr)
+        st.metric(label="معدل الترشيح الكبيبي المقدر (eGFR)", value=f"{egfr} mL/min/1.73m²")
         
+        interp, status = get_egfr_interpretation(egfr)
+        if status == "success": st.success(interp)
+        elif status == "info": st.info(interp)
+        elif status == "warning": st.warning(interp)
+        else: st.error(interp)
+
+    if st.button("حفظ النتيجة في السجل 💾"):
+        if 'last_data' in st.session_state and st.session_state.last_data[0]:
+            conn = sqlite3.connect('nibras_records.db')
+            c = conn.cursor()
+            c.execute("INSERT INTO patients VALUES (?,?,?,?,?,?,?)", 
+                      (datetime.now().strftime("%Y-%m-%d"), *st.session_state.last_data))
+            conn.commit()
+            conn.close()
+            st.success("تم الحفظ!")
+        else:
+            st.error("يرجى إجراء التحليل وإدخال الاسم.")
+
+with tab2:
+    st.subheader("سجل المرضى المخزن")
+    if st.button("تحديث السجلات 🔄"):
+        conn = sqlite3.connect('nibras_records.db')
+        df = pd.read_sql_query("SELECT * FROM patients", conn)
+        conn.close()
+        st.dataframe(df)
         
