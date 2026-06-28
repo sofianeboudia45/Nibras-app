@@ -2,6 +2,7 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime
+from fpdf import FPDF
 
 # إعداد قاعدة البيانات
 def init_db():
@@ -14,16 +15,26 @@ def init_db():
 
 init_db()
 
-# معادلة eGFR
+# دالة PDF
+def create_pdf(name, age, gender, creatinine, glucose, egfr):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(200, 10, txt="Nibras Medical Report", ln=True, align='C')
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt=f"Patient: {name} | Age: {age} | Gender: {gender}", ln=True)
+    pdf.cell(200, 10, txt=f"Creatinine: {creatinine} | eGFR: {egfr}", ln=True)
+    return pdf.output(dest='S').encode('latin-1')
+
+# دالة الحساب
 def calculate_egfr(creatinine, age, gender):
     k = 0.7 if gender == 'female' else 0.9
     alpha = -0.241 if (gender == 'female' and creatinine <= k) else (-1.200 if (gender == 'female' and creatinine > k) else (-0.302 if creatinine <= k else -1.200))
     a = 144 if gender == 'female' else 141
     return round(a * ((creatinine / k) ** alpha) * (0.9938 ** age), 2)
 
-# واجهة التطبيق
+# الواجهة
 st.title("نبراس - أداة التحليل السريري 🩺")
-st.subheader("الجزائر - الرعاية الصحية الرقمية 🇩🇿")
 
 tab1, tab2 = st.tabs(["تحليل جديد", "سجل المرضى 📋"])
 
@@ -36,9 +47,11 @@ with tab1:
     if st.button("تحليل الحالة 🔬"):
         gender_en = 'male' if gender == "ذكر" else 'female'
         egfr = calculate_egfr(creatinine, age, gender_en)
-        st.metric(label="معدل الترشيح الكبيبي المقدر (eGFR)", value=f"{egfr} mL/min/1.73m²")
-        st.session_state.last_data = (patient_name, gender, age, creatinine, 0, egfr)
-        st.success("تم التحليل")
+        st.metric(label="eGFR", value=f"{egfr} mL/min/1.73m²")
+        
+        # زر تحميل PDF
+        pdf_data = create_pdf(patient_name, age, gender, creatinine, 0, egfr)
+        st.download_button("تحميل التقرير PDF 📄", data=pdf_data, file_name="report.pdf")
 
 with tab2:
     if st.button("تحديث السجلات 🔄"):
@@ -46,4 +59,3 @@ with tab2:
         df = pd.read_sql_query("SELECT * FROM patients", conn)
         conn.close()
         st.dataframe(df)
-        
