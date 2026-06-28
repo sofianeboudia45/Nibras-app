@@ -15,18 +15,17 @@ def init_db():
 
 init_db()
 
-# دالة PDF معدلة لتجنب الخطأ
-def create_pdf(name, age, gender, creatinine, glucose, egfr):
+# دالة PDF آمنة لمنع UnicodeEncodeError
+def create_pdf(age, gender, creatinine, glucose, egfr):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(200, 10, txt="Nibras Medical Report", ln=True, align='C')
+    pdf.cell(200, 10, txt="Nibras Clinical Report", ln=True, align='C')
     pdf.set_font("Arial", size=12)
-    # تصفية الاسم من أي حروف عربية لمنع الخطأ في 2121.jpg
-    safe_name = "".join([c if ord(c) < 128 else "" for c in name])
-    pdf.cell(200, 10, txt=f"Patient: {safe_name} | Age: {age} | Gender: {gender}", ln=True)
+    pdf.ln(10)
+    pdf.cell(200, 10, txt=f"Patient Details (Age: {age}, Gender: {gender})", ln=True)
     pdf.cell(200, 10, txt=f"Creatinine: {creatinine} mg/dL | Glucose: {glucose} mg/dL", ln=True)
-    pdf.cell(200, 10, txt=f"eGFR: {egfr} mL/min/1.73m2", ln=True)
+    pdf.cell(200, 10, txt=f"Estimated eGFR: {egfr} mL/min/1.73m2", ln=True)
     return pdf.output(dest='S').encode('latin-1')
 
 # دالة الحساب
@@ -53,8 +52,8 @@ with tab1:
         egfr = calculate_egfr(creatinine, age, gender_en)
         st.metric(label="eGFR", value=f"{egfr} mL/min/1.73m²")
         
-        # زر تحميل PDF
-        pdf_data = create_pdf(patient_name, age, gender, creatinine, glucose, egfr)
+        # زر تحميل PDF (تم حذف الاسم من الدالة لتجنب الخطأ)
+        pdf_data = create_pdf(age, gender, creatinine, glucose, egfr)
         st.download_button("تحميل التقرير PDF 📄", data=pdf_data, file_name="report.pdf")
 
 with tab2:
