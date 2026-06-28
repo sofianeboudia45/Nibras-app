@@ -23,13 +23,11 @@ def calculate_egfr(creatinine, age, gender):
 # 3. واجهة التطبيق
 st.title("نبراس - أداة التحليل السريري")
 
-# استخدام session_state لتخزين القيم لضمان استمراريتها
 if 'egfr_val' not in st.session_state:
     st.session_state.egfr_val = None
 
 st.subheader("بيانات المريض")
 
-# نقل الحقول إلى الواجهة الرئيسية بدلاً من الشريط الجانبي لتظهر بوضوح في الهاتف
 gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
 age = st.number_input("العمر (سنة)", min_value=0, max_value=120, value=50)
 creatinine = st.number_input("الكرياتينين (mg/dL)", min_value=0.0, value=1.0, step=0.01)
@@ -40,7 +38,10 @@ if st.button("تحليل الحالة"):
     gender_en = 'male' if gender == "ذكر" else 'female'
     st.session_state.egfr_val = calculate_egfr(creatinine, age, gender_en)
     st.session_state.last_data = (gender, age, creatinine, glucose, st.session_state.egfr_val)
-    st.success(f"النتيجة: {st.session_state.egfr_val}")
+    
+    # عرض النتيجة بشكل واضح
+    st.success("تم حساب التحليل بنجاح")
+    st.metric(label="معدل الترشيح الكبيبي المقدر (eGFR)", value=f"{st.session_state.egfr_val} mL/min/1.73m²")
 
 # زر الحفظ
 if st.button("حفظ النتيجة في السجل"):
@@ -51,7 +52,7 @@ if st.button("حفظ النتيجة في السجل"):
                   (datetime.now().strftime("%Y-%m-%d"), *st.session_state.last_data))
         conn.commit()
         conn.close()
-        st.success("تم حفظ البيانات بنجاح!")
+        st.success("تم حفظ البيانات في السجل!")
     else:
         st.error("يرجى إجراء التحليل أولاً قبل الحفظ.")
-        
+    
